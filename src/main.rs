@@ -18,11 +18,11 @@ fn main() {
     let mut ai = button::Button::new(window.display.as_ref().unwrap(), 0.9, 0.0, 20.0, 80.0);
 
     window.run(event_loop, move |window, events, frame| {
-        if events.has_pressed(KeyEnum::W) {
+        if events.has_pressed(KeyEnum::W) && user.get_y_position() < 1.0 {
             user.move_y(0.02);
         }
 
-        if events.has_pressed(KeyEnum::S) {
+        if events.has_pressed(KeyEnum::S) && user.get_y_position() > -1.0 {
             user.move_y(-0.02);
         }
 

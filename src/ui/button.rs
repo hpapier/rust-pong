@@ -109,6 +109,10 @@ pub mod button {
             self
         }
 
+        pub fn get_y_position(&self) -> f32 {
+            self.y + self.translation_y
+        }
+
         pub fn draw(&mut self, frame: &mut Frame) -> () {
             // println!("Drawing button");
             let frame_result = frame.draw(
