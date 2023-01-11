@@ -33,25 +33,30 @@ pub mod window_manager {
     #[derive(Hash, Eq, PartialEq, Debug)]
     pub enum KeyEnum {
         Up,
-        Right,
         Down,
-        Left,
+        W,
+        S,
     }
 
     pub struct Events {
         pub key_pressed: HashMap<KeyEnum, bool>,
+        pub requested_close: bool,
     }
 
     impl Events {
         pub fn has_pressed(&self, key: KeyEnum) -> bool {
             match self.key_pressed.get(&key) {
-                Some(value) => true,
+                Some(_) => true,
                 None => false,
             }
         }
 
         pub fn set_key_pressed(&mut self, key: KeyEnum) -> () {
             self.key_pressed.insert(key, true);
+        }
+
+        pub fn has_requested_close(&self) -> bool {
+            self.requested_close
         }
     }
 
@@ -93,16 +98,17 @@ pub mod window_manager {
         pub fn build(mut self, events_loop: &EventLoop<()>) -> Self {
             println!("Building window");
 
-            let windowBuilder = WindowBuilder::new()
+            let window_builder = WindowBuilder::new()
                 .with_inner_size(glium::glutin::dpi::LogicalSize::new(
                     self.width,
                     self.height,
                 ))
                 .with_title(self.title.clone());
 
-            let contextBuilder = glium::glutin::ContextBuilder::new();
+            let context_builder = glium::glutin::ContextBuilder::new();
 
-            let display = glium::Display::new(windowBuilder, contextBuilder, events_loop).unwrap();
+            let display =
+                glium::Display::new(window_builder, context_builder, events_loop).unwrap();
 
             self.display = Some(display);
 
@@ -124,6 +130,7 @@ pub mod window_manager {
             events_loop.run(move |event, _, control_flow| {
                 let mut events = Events {
                     key_pressed: HashMap::new(),
+                    requested_close: false,
                 };
 
                 control_flow.set_wait_until(
@@ -131,11 +138,14 @@ pub mod window_manager {
                 );
 
                 match event {
-                    Event::WindowEvent { window_id, event } => match event {
+                    Event::WindowEvent {
+                        window_id: _,
+                        event,
+                    } => match event {
                         WindowEvent::KeyboardInput {
-                            device_id,
+                            device_id: _,
                             input,
-                            is_synthetic,
+                            is_synthetic: _,
                         } => match input {
                             KeyboardInput {
                                 virtual_keycode,
@@ -146,19 +156,22 @@ pub mod window_manager {
                                 glium::glutin::event::VirtualKeyCode::Up => {
                                     events.set_key_pressed(KeyEnum::Up)
                                 }
-                                glium::glutin::event::VirtualKeyCode::Right => {
-                                    events.set_key_pressed(KeyEnum::Right)
-                                }
                                 glium::glutin::event::VirtualKeyCode::Down => {
                                     events.set_key_pressed(KeyEnum::Down)
                                 }
-                                glium::glutin::event::VirtualKeyCode::Left => {
-                                    events.set_key_pressed(KeyEnum::Left)
+                                glium::glutin::event::VirtualKeyCode::W => {
+                                    events.set_key_pressed(KeyEnum::W)
+                                }
+                                glium::glutin::event::VirtualKeyCode::S => {
+                                    events.set_key_pressed(KeyEnum::S)
                                 }
                                 _ => (),
                             },
                             _ => (),
                         },
+                        WindowEvent::CloseRequested => {
+                            events.requested_close = true;
+                        }
                         _ => (),
                     },
                     _ => (),
@@ -167,6 +180,10 @@ pub mod window_manager {
                 let mut frame = self.display.as_ref().unwrap().draw();
                 runner(&mut self, &events, &mut frame);
                 frame.finish().unwrap();
+
+                if events.has_requested_close() {
+                    *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
+                }
             });
         }
     }
